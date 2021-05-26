@@ -14,6 +14,7 @@ from tqdm import tqdm
 base_files_path_template = "/data/dnc2020/raw_tweets/{date}*/*.gz"
 error_file_path = 'errors.log'
 output_path_template = '/data/navid/processed_tweets/processed_tweets_{date}/'
+output_user_path_template = '/data/navid/processed_users/processed_users_{date}/'
 begin_date = '2020-01-01'
 end_date = '2020-12-31'
 batch_size = 100000
@@ -105,6 +106,35 @@ def build_tweet_df(tweet_raw_dict, pass_rt=False):
 	return tweets_df
 
 
+def build_user_df(tweet_raw_dict):
+	
+	user_ids = []
+	user_descriptions = []
+	usernames = []
+	timestamps = []
+
+	for tid, tweet_json in tweet_raw_dict.items():
+		if 'user' in tweet_json:
+			usr_json = tweet_json['user']
+		else:
+			continue
+
+		timestamps.append(int(parser.parse(tweet_json['created_at']).timestamp()))
+		user_ids.append(usr_json['id'])
+		user_descriptions.append(usr_json['description'])
+		usernames.append(usr_json['screen_name'])
+
+
+	tweets_df = pd.DataFrame({
+		'id': user_ids,
+		'created_at': timestamps, 
+		'username': usernames,
+		'description': user_descriptions,
+	})
+
+	return tweets_df
+
+
 def preprocess_and_save(search_path, output_path_base):
 			
 	for path in glob.glob(search_path):
@@ -115,7 +145,8 @@ def preprocess_and_save(search_path, output_path_base):
 				if done:
 					break
 				print(f'finished batch: {batch_no}')
-				result_df = build_tweet_df(content_dict)
+				# result_df = build_tweet_df(content_dict)
+				result_df = build_user_df(content_dict)
 				result_df.to_parquet(
 					os.path.join(output_path_base, f"{int(datetime.now().timestamp())}.parquet")
 				)
@@ -129,7 +160,9 @@ def run():
 	
 	while current_dt != parser.parse(end_date):
 		current_date = current_dt.date()
-		output_path = output_path_template.format(date=current_date)
+		# TODO: make this configurable
+		# output_path = output_path_template.format(date=current_date)
+		output_user_path = output_path_template.format(date=current_date)
 		os.makedirs(output_path, exist_ok=True)
 		print(f'processing {current_date}')
 		search_path = base_files_path_template.format(date=current_date)
