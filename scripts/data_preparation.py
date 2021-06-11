@@ -11,15 +11,6 @@ from dateutil import parser
 from datetime import timedelta
 
 
-# base_files_path_template = "/data/dnc2020/raw_tweets/{date}*/*.gz"
-# error_file_path = 'errors.log'
-# output_path_template = '/data/navid/processed_tweets/processed_tweets_{date}/'
-# output_user_path_template = '/data/navid/processed_users/processed_users_{date}/'
-# begin_date = '2020-01-01'
-# end_date = '2020-12-31'
-# batch_size = 100000
-
-
 def log_error(e, msg, path='errors.log'):
 	with open(path, "a") as f:
 		f.write(f"\n{datetime.now()}: {msg} caused by: {e}\n")
@@ -179,6 +170,13 @@ def run(args):
 
 
 if __name__ == '__main__':
+	"""
+	This script will run the streamed .gz data in batches and creates a processed dataframe for each date
+	sample running bash command:
+	python data_preparation.py --output_path_template="/some/path/processed_tweets_{date}/" \
+		--begin_date="2020-01-01" --end_date="2020-12-31"
+	"""
+
 	arg_parser = argparse.ArgumentParser()
 	arg_parser.add_argument("--stream_path_template", default="/data/dnc2020/raw_tweets/{date}*/*.gz", )
 	arg_parser.add_argument("--output_path_template", required=True)
