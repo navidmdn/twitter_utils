@@ -3,10 +3,10 @@ from tweepy.models import User
 
 
 class ApiWrapper:
-    acc_key = credentials.acc_key
-    acc_secret = credentials.acc_secret
-    com_key = credentials.com_key
-    com_secret = credentials.com_secret
+    access_token = credentials.access_token
+    access_token_secret = credentials.access_token_secret
+    api_key = credentials.api_key
+    api_secret = credentials.api_secret
 
     def __init__(self):
         pass

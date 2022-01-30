@@ -11,8 +11,8 @@ class V1ApiWrapper(ApiWrapper):
         self.api = None
 
     def authenticate(self):
-        auth = tweepy.OAuthHandler(self.com_key, self.com_secret)
-        auth.set_access_token(self.acc_key, self.acc_secret)
+        auth = tweepy.OAuthHandler(self.api_key, self.api_secret)
+        auth.set_access_token(self.access_token, self.access_token_secret)
         self.api = tweepy.API(auth, wait_on_rate_limit=True)
 
     def get_user_by_username(self, username: str) -> User:
