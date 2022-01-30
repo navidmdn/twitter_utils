@@ -21,7 +21,7 @@ class V1ApiWrapper(ApiWrapper):
     def get_user_by_id(self, user_id: int) -> User:
         return self.api.get_user(user_id)
 
-    def get_tweets_by_keywords(self, keywords, retweet=None, pages=inf, **kwargs) -> List[Status]:
+    def get_tweets_by_keywords(self, keywords, retweet=None, pages=1, **kwargs) -> List[Status]:
         """
 
         :param pages: number of pages

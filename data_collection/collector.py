@@ -5,6 +5,8 @@ from data_collection.dataaccess.status import StatusSparkDA
 
 class Collector:
     def __init__(self, api_version=1):
+
+        #TODO: set optional dataaccess (no need to have pyspark always)
         self.status_da = StatusSparkDA()
         self.api = create_api_wrapper(api_version)
 
