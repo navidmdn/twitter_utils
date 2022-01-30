@@ -6,6 +6,12 @@ __pycache__/
 # C extensions
 *.so
 
+# credentials
+config/credentials.py
+
+# temporarily hide notebooks
+notebooks/
+
 # Distribution / packaging
 .Python
 build/
