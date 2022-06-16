@@ -1,11 +1,11 @@
-from data_collection.util.spark import spark
+from data_collection.util.spark import get_spark
 from typing import List
 from tweepy.models import Status
 
 
 class StatusSparkDA:
     def __init__(self):
-        self.spark = spark
+        self.spark = get_spark()
 
     schema = [
         'id',
