@@ -68,7 +68,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--data_base_dir', help="Base path to read compressed .gz files from decahose", required=True)
     arg_parser.add_argument('--begin_date', help="begin date of extraction", default='2020-05-06')
     arg_parser.add_argument('--end_date', help="end date of extraction", default='2020-05-06')
-    arg_parser.add_argument('--sample_rate', type=float, help="The rate of sampling tweets", default=0.001)
+    arg_parser.add_argument('--sample_rate', type=float, help="The rate of sampling tweets", default=1.0)
     arg_parser.add_argument('--user_per_day', type=int, help="number of new users to look at per day", default=10000)
     args = arg_parser.parse_args()
 
