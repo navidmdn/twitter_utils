@@ -4,6 +4,7 @@ from typing import Dict
 class User:
     def __init__(self, user_dict: Dict):
         self.uid = user_dict['id']
+        self.created_at = user_dict['created_at']
         self.screen_name = user_dict['screen_name']
         self.description = user_dict['description']
         self.verified = user_dict['verified']

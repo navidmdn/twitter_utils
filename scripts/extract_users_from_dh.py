@@ -38,7 +38,7 @@ def extract_users(
     user_per_day: int,
     begin_date: str,
     end_date: str,
-    logger=logging
+    logger=None
 ):
     current_dt = parser.parse(begin_date)
     end_dt = parser.parse(end_date)
