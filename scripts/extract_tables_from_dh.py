@@ -18,7 +18,7 @@ from data_collection.dataaccess.user import User
 from data_collection.dataaccess.tweet import Tweet
 
 
-def process_tweets_and_users(date, data_base_dir, sample_rate):
+def process_tweets_and_users(date, data_base_dir, sample_rate, lang, batch_size=1000000):
     tweets_path = os.path.join(data_base_dir, f"tweets.json.{str(date)}.xz")
 
     users = {}
@@ -30,12 +30,22 @@ def process_tweets_and_users(date, data_base_dir, sample_rate):
         i = 1
         while len(content) > 0:
             try:
-                if i % 1000000 == 0:
+                if i % batch_size == 0:
                     logger.debug(f"processed {i} records")
+                    yield users, tweets
+                    users = {}
+                    tweets = {}
+
                 if random() < sample_rate:
                     json_d = json.loads(content)
                     user = User(json_d['user'])
                     tweet = Tweet(json_d)
+
+                    if tweet.lang not in ['und', lang]:
+                        content = f.readline().decode('utf-8')
+                        i += 1
+                        continue
+
                     user.set_record_time(json_d['created_at'])
 
                     # in order to keep distinct user description pairs in each day
@@ -64,7 +74,7 @@ def process_tweets_and_users(date, data_base_dir, sample_rate):
             content = f.readline().decode('utf-8')
             i += 1
 
-    return users, tweets
+    yield users, tweets
 
 
 def extract_tables(
@@ -73,11 +83,12 @@ def extract_tables(
     sample_rate: float,
     begin_date: str,
     end_date: str,
-    logger=None
+    lang: str,
+    logger=None,
 ):
     current_dt = parser.parse(begin_date)
     end_dt = parser.parse(end_date)
-    spark = get_spark(driver_mem=20, cores=30)
+    spark = get_spark(driver_mem=30, cores=30)
 
     logger.info(f"Extracting tables from {begin_date} to {end_date}")
 
@@ -85,21 +96,22 @@ def extract_tables(
         begin_t = time()
         current_date = current_dt.date()
 
-        users, tweets = process_tweets_and_users(current_date, data_base_dir, sample_rate)
+        for batch_no, (users, tweets) in enumerate(process_tweets_and_users(current_date, data_base_dir, sample_rate,
+                                                                            lang)):
 
-        logger.info(f"storing users and tweets parquet file sfor {current_date}")
+            logger.debug(f"storing users and tweets parquet file for {current_date}")
 
-        users_list = list(users.values())
-        users_df = spark.createDataFrame(users_list)
+            users_list = list(users.values())
+            users_df = spark.createDataFrame(users_list)
 
-        tweets_list = list(tweets.values())
-        tweets_df = spark.createDataFrame(tweets_list)
+            tweets_list = list(tweets.values())
+            tweets_df = spark.createDataFrame(tweets_list)
 
-        output_users_file_path = os.path.join(output_path, 'users', f'{current_date}.parquet')
-        output_tweets_file_path = os.path.join(output_path, 'tweets', f'{current_date}.parquet')
+            output_users_file_path = os.path.join(output_path, 'users', f'date={current_date}', f'{batch_no}.parquet')
+            output_tweets_file_path = os.path.join(output_path, 'tweets', f'date={current_date}', f'{batch_no}.parquet')
 
-        tweets_df.write.parquet(output_tweets_file_path, mode='overwrite')
-        users_df.write.parquet(output_users_file_path, mode='overwrite')
+            tweets_df.write.parquet(output_tweets_file_path, mode='overwrite')
+            users_df.write.parquet(output_users_file_path, mode='overwrite')
 
         logger.info(f"users and tweets for {current_date} finished in {time()-begin_t}s")
 
@@ -114,6 +126,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--end_date', help="end date of extraction", default='2020-05-06')
     arg_parser.add_argument('--sample_rate', type=float, help="The rate of sampling tweets", default=1.0)
     arg_parser.add_argument('--log', type=str, help="logging file name", default='default.log')
+    arg_parser.add_argument('--lang', type=str, help="language to filter", default='en')
 
     args = arg_parser.parse_args()
 
@@ -136,5 +149,6 @@ if __name__ == '__main__':
         sample_rate=args.sample_rate,
         begin_date=args.begin_date,
         end_date=args.end_date,
-        logger=logger
+        lang=args.lang,
+        logger=logger,
     )
