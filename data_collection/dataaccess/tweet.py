@@ -22,13 +22,11 @@ class Tweet:
 
         if 'extended_tweet' in tweet_dict:
             self.text = tweet_dict['extended_tweet']['full_text']
-        elif is_retweet:
-            if 'extended_tweet' in tweet_dict['retweeted_status']:
-                self.text = tweet_dict['retweeted_status']['extended_tweet']['full_text']
-            else:
-                self.text = tweet_dict['retweeted_status']['text']
         else:
             self.text = tweet_dict['text']
+
+        if is_retweet:
+            self.text = None
 
         self.in_reply_to_status_id = tweet_dict['in_reply_to_status_id']
         self.in_reply_to_user_id = tweet_dict['in_reply_to_user_id']

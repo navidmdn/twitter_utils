@@ -18,7 +18,7 @@ from data_collection.dataaccess.user import User
 from data_collection.dataaccess.tweet import Tweet
 
 
-def process_tweets_and_users(date, data_base_dir, sample_rate, lang, batch_size=1000000):
+def process_tweets_and_users(date, data_base_dir, lang, batch_size=1000000):
     tweets_path = os.path.join(data_base_dir, f"tweets.json.{str(date)}.xz")
 
     users = {}
@@ -36,37 +36,37 @@ def process_tweets_and_users(date, data_base_dir, sample_rate, lang, batch_size=
                     users = {}
                     tweets = {}
 
-                if random() < sample_rate:
-                    json_d = json.loads(content)
-                    user = User(json_d['user'])
-                    tweet = Tweet(json_d)
+                json_d = json.loads(content)
+                user = User(json_d['user'])
+                tweet = Tweet(json_d)
 
+                if tweet.lang != 'all':
                     if tweet.lang not in ['und', lang]:
                         content = f.readline().decode('utf-8')
                         i += 1
                         continue
 
-                    user.set_record_time(json_d['created_at'])
+                user.set_record_time(json_d['created_at'])
 
-                    # in order to keep distinct user description pairs in each day
-                    users[(user.uid, user.description)] = user
-                    tweets[tweet.id] = tweet
+                # in order to keep distinct user description pairs in each day
+                users[(user.uid, user.description)] = user
+                tweets[tweet.id] = tweet
 
-                    if tweet.retweeted_id is not None:
-                        try:
-                            retweeted_usr = User(json_d['retweeted_status']['user'])
-                            retweeted_usr.set_record_time(json_d['created_at'])
-                            users[(retweeted_usr.uid, retweeted_usr.description)] = retweeted_usr
-                        except Exception as e:
-                            logger.error(f"could not extract retweeted user: {e}")
+                if tweet.retweeted_id is not None:
+                    try:
+                        retweeted_usr = User(json_d['retweeted_status']['user'])
+                        retweeted_usr.set_record_time(json_d['created_at'])
+                        users[(retweeted_usr.uid, retweeted_usr.description)] = retweeted_usr
+                    except Exception as e:
+                        logger.error(f"could not extract retweeted user: {e}")
 
-                    if tweet.quoted_id is not None:
-                        try:
-                            quoted_usr = User(json_d['quoted_status']['user'])
-                            quoted_usr.set_record_time(json_d['created_at'])
-                            users[(quoted_usr.uid, quoted_usr.description)] = quoted_usr
-                        except Exception as e:
-                            logger.error(f"could not extract quoted user: {e}")
+                if tweet.quoted_id is not None:
+                    try:
+                        quoted_usr = User(json_d['quoted_status']['user'])
+                        quoted_usr.set_record_time(json_d['created_at'])
+                        users[(quoted_usr.uid, quoted_usr.description)] = quoted_usr
+                    except Exception as e:
+                        logger.error(f"could not extract quoted user: {e}")
 
             except Exception as e:
                 logger.error(f"couldn't process tweet/user record with error: {e}")
@@ -124,9 +124,8 @@ if __name__ == '__main__':
     arg_parser.add_argument('--data_base_dir', help="Base path to read compressed .gz files from decahose", required=True)
     arg_parser.add_argument('--begin_date', help="begin date of extraction", default='2020-05-06')
     arg_parser.add_argument('--end_date', help="end date of extraction", default='2020-05-06')
-    arg_parser.add_argument('--sample_rate', type=float, help="The rate of sampling tweets", default=1.0)
     arg_parser.add_argument('--log', type=str, help="logging file name", default='default.log')
-    arg_parser.add_argument('--lang', type=str, help="language to filter", default='en')
+    arg_parser.add_argument('--lang', type=str, help="language to filter", default='all')
 
     args = arg_parser.parse_args()
 
@@ -146,7 +145,6 @@ if __name__ == '__main__':
     extract_tables(
         output_path=args.output_dir,
         data_base_dir=args.data_base_dir,
-        sample_rate=args.sample_rate,
         begin_date=args.begin_date,
         end_date=args.end_date,
         lang=args.lang,
