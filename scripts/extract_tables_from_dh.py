@@ -80,7 +80,6 @@ def process_tweets_and_users(date, data_base_dir, lang, batch_size=1000000):
 def extract_tables(
     output_path: str,
     data_base_dir: str,
-    sample_rate: float,
     begin_date: str,
     end_date: str,
     lang: str,
@@ -96,8 +95,7 @@ def extract_tables(
         begin_t = time()
         current_date = current_dt.date()
 
-        for batch_no, (users, tweets) in enumerate(process_tweets_and_users(current_date, data_base_dir, sample_rate,
-                                                                            lang)):
+        for batch_no, (users, tweets) in enumerate(process_tweets_and_users(current_date, data_base_dir, lang)):
 
             logger.debug(f"storing users and tweets parquet file for {current_date}")
 
@@ -120,7 +118,7 @@ def extract_tables(
 
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument('--output_dir', help="The path to store the §extracted data as parquet files", required=True)
+    arg_parser.add_argument('--output_dir', help="The path to store the extracted data as parquet files", required=True)
     arg_parser.add_argument('--data_base_dir', help="Base path to read compressed .gz files from decahose", required=True)
     arg_parser.add_argument('--begin_date', help="begin date of extraction", default='2020-05-06')
     arg_parser.add_argument('--end_date', help="end date of extraction", default='2020-05-06')
