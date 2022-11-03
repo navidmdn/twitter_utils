@@ -17,7 +17,6 @@ from data_collection.util.spark import get_spark
 from data_collection.dataaccess.user import User
 from data_collection.dataaccess.tweet import Tweet
 
-def extract_tweet_and_user(tweet_json):
 
 def process_tweets_and_users(date, data_base_dir, lang, batch_size=1000000):
     tweets_path = os.path.join(data_base_dir, f"tweets.json.{str(date)}.xz")
