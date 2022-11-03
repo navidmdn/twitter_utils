@@ -17,6 +17,7 @@ from data_collection.util.spark import get_spark
 from data_collection.dataaccess.user import User
 from data_collection.dataaccess.tweet import Tweet
 
+def extract_tweet_and_user(tweet_json):
 
 def process_tweets_and_users(date, data_base_dir, lang, batch_size=1000000):
     tweets_path = os.path.join(data_base_dir, f"tweets.json.{str(date)}.xz")
@@ -52,9 +53,12 @@ def process_tweets_and_users(date, data_base_dir, lang, batch_size=1000000):
                 users[(user.uid, user.description)] = user
                 tweets[tweet.id] = tweet
 
+                #extracting both user and tweet of the referenced tweet
                 if tweet.retweeted_id is not None:
                     try:
                         retweeted_usr = User(json_d['retweeted_status']['user'])
+                        retweeted_tweet = Tweet(json_d['retweeted_status'])
+                        tweets[retweeted_tweet.id] = retweeted_tweet
                         retweeted_usr.set_record_time(json_d['created_at'])
                         users[(retweeted_usr.uid, retweeted_usr.description)] = retweeted_usr
                     except Exception as e:
@@ -64,6 +68,8 @@ def process_tweets_and_users(date, data_base_dir, lang, batch_size=1000000):
                     try:
                         quoted_usr = User(json_d['quoted_status']['user'])
                         quoted_usr.set_record_time(json_d['created_at'])
+                        retweeted_tweet = Tweet(json_d['retweeted_status'])
+                        tweets[retweeted_tweet.id] = retweeted_tweet
                         users[(quoted_usr.uid, quoted_usr.description)] = quoted_usr
                     except Exception as e:
                         logger.error(f"could not extract quoted user: {e}")
