@@ -67,7 +67,7 @@ def process_tweets_and_users(date, data_base_dir, lang, batch_size=1000000):
                     try:
                         quoted_usr = User(json_d['quoted_status']['user'])
                         quoted_usr.set_record_time(json_d['created_at'])
-                        retweeted_tweet = Tweet(json_d['retweeted_status'])
+                        retweeted_tweet = Tweet(json_d['quoted_status'])
                         tweets[retweeted_tweet.id] = retweeted_tweet
                         users[(quoted_usr.uid, quoted_usr.description)] = quoted_usr
                     except Exception as e:

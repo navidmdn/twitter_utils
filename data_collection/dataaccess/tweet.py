@@ -11,12 +11,14 @@ class Tweet:
         if is_retweet:
             self.retweeted_id = tweet_dict['retweeted_status']['id']
             self.retweeted_uid = tweet_dict['retweeted_status']['user']['id']
+            self.retweeted_screen_name = tweet_dict['retweeted_status']['user']['screen_name']
         else:
             self.retweeted_uid = self.retweeted_id = None
 
         if is_quoted:
             self.quoted_id = tweet_dict['quoted_status']['id']
             self.quoted_uid = tweet_dict['quoted_status']['user']['id']
+            self.quoted_screen_name = tweet_dict['quoted_status']['user']['screen_name']
         else:
             self.quoted_uid = self.quoted_id = None
 
@@ -30,6 +32,8 @@ class Tweet:
 
         self.in_reply_to_status_id = tweet_dict['in_reply_to_status_id']
         self.in_reply_to_user_id = tweet_dict['in_reply_to_user_id']
+        self.in_reply_to_screen_name = tweet_dict['in_reply_to_screen_name']
+
         self.user_id = tweet_dict['user']['id']
         self.lang = tweet_dict['lang']
 
@@ -37,13 +41,18 @@ class Tweet:
         self.hashtags = [h['text'] for h in hashtags]
 
         mentions = tweet_dict['entities']['user_mentions']
-        self.mentions = [m['id'] for m in mentions]
+        self.mention_ids = [m['id'] for m in mentions]
+        self.mention_screen_names = [m['screen_name'] for m in mentions]
 
         urls = tweet_dict['entities']['urls']
-        self.urls = [u['url'] for u in urls]
+        self.urls = [u['expanded_url'] for u in urls]
 
-        media = tweet_dict['entities']['media'] if 'media' in tweet_dict['entities'] else []
-        self.media = [m['media_url'] for m in media]
+        if 'extended_entities' in tweet_dict:
+            media = tweet_dict['extended_entities']['media'] if 'media' in tweet_dict['extended_entities'] else []
+            self.media = [m['expanded_url'] for m in media]
+        else:
+            media = tweet_dict['entities']['media'] if 'media' in tweet_dict['entities'] else []
+            self.media = [m['expanded_url'] for m in media]
 
 
 
