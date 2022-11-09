@@ -1,4 +1,5 @@
 from typing import Dict
+import pyspark.sql.types as T
 
 
 class User:
@@ -30,3 +31,26 @@ class User:
         if attr in d:
             return d[attr]
         return None
+
+
+schema = T.StructType([
+    T.StructField("uid", T.StringType(), True),
+    T.StructField("created_at", T.StringType(), True),
+    T.StructField("screen_name", T.StringType(), True),
+    T.StructField("description", T.StringType(), True),
+    T.StructField("verified", T.BooleanType(), True),
+    T.StructField("followers_count", T.IntegerType(), True),
+    T.StructField("friends_count", T.IntegerType(), True),
+    T.StructField("record_time", T.StringType(), True),
+    T.StructField("name", T.StringType(), True),
+
+    T.StructField("location", T.StringType(), True),
+    T.StructField("url", T.StringType(), True),
+    T.StructField("protected", T.BooleanType(), True),
+    T.StructField("listed_count", T.IntegerType(), True),
+    T.StructField("favorites_count", T.IntegerType(), True),
+    T.StructField("statuses_count", T.IntegerType(), True),
+    T.StructField("withheld_in_countries", T.ArrayType(T.StringType()), True),
+    T.StructField("withheld_scope", T.StringType(), True),
+])
+

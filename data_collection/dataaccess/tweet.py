@@ -36,6 +36,7 @@ class Tweet:
 
         self.user_id = tweet_dict['user']['id']
         self.lang = tweet_dict['lang']
+        self.source = tweet_dict['source']
 
         hashtags = tweet_dict['entities']['hashtags']
         self.hashtags = [h['text'] for h in hashtags]

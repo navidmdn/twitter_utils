@@ -14,7 +14,7 @@ import pyspark.sql.functions as F
 from dateutil import parser
 
 from data_collection.util.spark import get_spark
-from data_collection.dataaccess.user import User
+from data_collection.dataaccess.user import User, schema as user_schema
 from data_collection.dataaccess.tweet import Tweet
 
 
@@ -105,7 +105,7 @@ def extract_tables(
             logger.debug(f"storing users and tweets parquet file for {current_date}")
 
             users_list = list(users.values())
-            users_df = spark.createDataFrame(users_list)
+            users_df = spark.createDataFrame(users_list, schema=user_schema)
 
             tweets_list = list(tweets.values())
             tweets_df = spark.createDataFrame(tweets_list)
