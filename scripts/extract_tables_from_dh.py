@@ -99,24 +99,26 @@ def extract_tables(
     while current_dt < end_dt:
         begin_t = time()
         current_date = current_dt.date()
+        try:
+            for batch_no, (users, tweets) in enumerate(process_tweets_and_users(current_date, data_base_dir, lang)):
 
-        for batch_no, (users, tweets) in enumerate(process_tweets_and_users(current_date, data_base_dir, lang)):
+                logger.debug(f"storing users and tweets parquet file for {current_date}")
 
-            logger.debug(f"storing users and tweets parquet file for {current_date}")
+                users_list = list(users.values())
+                users_df = spark.createDataFrame(users_list, schema=user_schema)
 
-            users_list = list(users.values())
-            users_df = spark.createDataFrame(users_list, schema=user_schema)
+                tweets_list = list(tweets.values())
+                tweets_df = spark.createDataFrame(tweets_list)
 
-            tweets_list = list(tweets.values())
-            tweets_df = spark.createDataFrame(tweets_list)
+                output_users_file_path = os.path.join(output_path, 'users', f'date={current_date}', f'{batch_no}.parquet')
+                output_tweets_file_path = os.path.join(output_path, 'tweets', f'date={current_date}', f'{batch_no}.parquet')
 
-            output_users_file_path = os.path.join(output_path, 'users', f'date={current_date}', f'{batch_no}.parquet')
-            output_tweets_file_path = os.path.join(output_path, 'tweets', f'date={current_date}', f'{batch_no}.parquet')
+                tweets_df.write.parquet(output_tweets_file_path, mode='overwrite')
+                users_df.write.parquet(output_users_file_path, mode='overwrite')
 
-            tweets_df.write.parquet(output_tweets_file_path, mode='overwrite')
-            users_df.write.parquet(output_users_file_path, mode='overwrite')
-
-        logger.info(f"users and tweets for {current_date} finished in {time()-begin_t}s")
+            logger.info(f"users and tweets for {current_date} finished in {time()-begin_t}s")
+        except Exception as e:
+            logger.exception(f"Could not process the file in {current_date} due to: ", e)
 
         current_dt = current_dt + timedelta(days=1)
 
