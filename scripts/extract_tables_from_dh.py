@@ -24,60 +24,64 @@ def process_tweets_and_users(date, data_base_dir, lang, batch_size=1000000):
     users = {}
     tweets = {}
 
-    with lzma.open(tweets_path, 'r') as f:
-        content = f.readline().decode('utf-8')
-
-        i = 1
-        while len(content) > 0:
-            try:
-                if i % batch_size == 0:
-                    logger.debug(f"processed {i} records")
-                    yield users, tweets
-                    users = {}
-                    tweets = {}
-
-                json_d = json.loads(content)
-                user = User(json_d['user'])
-                tweet = Tweet(json_d)
-
-                if tweet.lang != 'all':
-                    if tweet.lang not in ['und', lang]:
-                        content = f.readline().decode('utf-8')
-                        i += 1
-                        continue
-
-                user.set_record_time(json_d['created_at'])
-
-                # in order to keep distinct user description pairs in each day
-                users[(user.uid, user.description)] = user
-                tweets[tweet.id] = tweet
-
-                #extracting both user and tweet of the referenced tweet
-                if tweet.retweeted_id is not None:
-                    try:
-                        retweeted_usr = User(json_d['retweeted_status']['user'])
-                        retweeted_tweet = Tweet(json_d['retweeted_status'])
-                        tweets[retweeted_tweet.id] = retweeted_tweet
-                        retweeted_usr.set_record_time(json_d['created_at'])
-                        users[(retweeted_usr.uid, retweeted_usr.description)] = retweeted_usr
-                    except Exception as e:
-                        logger.error(f"could not extract retweeted user: {e}")
-
-                if tweet.quoted_id is not None:
-                    try:
-                        quoted_usr = User(json_d['quoted_status']['user'])
-                        quoted_usr.set_record_time(json_d['created_at'])
-                        retweeted_tweet = Tweet(json_d['quoted_status'])
-                        tweets[retweeted_tweet.id] = retweeted_tweet
-                        users[(quoted_usr.uid, quoted_usr.description)] = quoted_usr
-                    except Exception as e:
-                        logger.error(f"could not extract quoted user: {e}")
-
-            except Exception as e:
-                logger.error(f"couldn't process tweet/user record with error: {e}")
-
+    try:
+        with lzma.open(tweets_path, 'r') as f:
             content = f.readline().decode('utf-8')
-            i += 1
+    except Exception as e:
+        logger.exception("could not read xz file for : ", e)
+        return users, tweets
+
+    i = 1
+    while len(content) > 0:
+        try:
+            if i % batch_size == 0:
+                logger.debug(f"processed {i} records")
+                yield users, tweets
+                users = {}
+                tweets = {}
+
+            json_d = json.loads(content)
+            user = User(json_d['user'])
+            tweet = Tweet(json_d)
+
+            if tweet.lang != 'all':
+                if tweet.lang not in ['und', lang]:
+                    content = f.readline().decode('utf-8')
+                    i += 1
+                    continue
+
+            user.set_record_time(json_d['created_at'])
+
+            # in order to keep distinct user description pairs in each day
+            users[(user.uid, user.description)] = user
+            tweets[tweet.id] = tweet
+
+            #extracting both user and tweet of the referenced tweet
+            if tweet.retweeted_id is not None:
+                try:
+                    retweeted_usr = User(json_d['retweeted_status']['user'])
+                    retweeted_tweet = Tweet(json_d['retweeted_status'])
+                    tweets[retweeted_tweet.id] = retweeted_tweet
+                    retweeted_usr.set_record_time(json_d['created_at'])
+                    users[(retweeted_usr.uid, retweeted_usr.description)] = retweeted_usr
+                except Exception as e:
+                    logger.error(f"could not extract retweeted user: {e}")
+
+            if tweet.quoted_id is not None:
+                try:
+                    quoted_usr = User(json_d['quoted_status']['user'])
+                    quoted_usr.set_record_time(json_d['created_at'])
+                    retweeted_tweet = Tweet(json_d['quoted_status'])
+                    tweets[retweeted_tweet.id] = retweeted_tweet
+                    users[(quoted_usr.uid, quoted_usr.description)] = quoted_usr
+                except Exception as e:
+                    logger.error(f"could not extract quoted user: {e}")
+
+        except Exception as e:
+            logger.error(f"couldn't process tweet/user record with error: {e}")
+
+        content = f.readline().decode('utf-8')
+        i += 1
 
     yield users, tweets
 
@@ -99,26 +103,27 @@ def extract_tables(
     while current_dt < end_dt:
         begin_t = time()
         current_date = current_dt.date()
-        try:
-            for batch_no, (users, tweets) in enumerate(process_tweets_and_users(current_date, data_base_dir, lang)):
 
-                logger.debug(f"storing users and tweets parquet file for {current_date}")
+        for batch_no, (users, tweets) in enumerate(process_tweets_and_users(current_date, data_base_dir, lang)):
 
-                users_list = list(users.values())
-                users_df = spark.createDataFrame(users_list, schema=user_schema)
+            if len(users) == 0 or len(tweets) == 0:
+                continue
 
-                tweets_list = list(tweets.values())
-                tweets_df = spark.createDataFrame(tweets_list)
+            logger.debug(f"storing users and tweets parquet file for {current_date}")
 
-                output_users_file_path = os.path.join(output_path, 'users', f'date={current_date}', f'{batch_no}.parquet')
-                output_tweets_file_path = os.path.join(output_path, 'tweets', f'date={current_date}', f'{batch_no}.parquet')
+            users_list = list(users.values())
+            users_df = spark.createDataFrame(users_list, schema=user_schema)
 
-                tweets_df.write.parquet(output_tweets_file_path, mode='overwrite')
-                users_df.write.parquet(output_users_file_path, mode='overwrite')
+            tweets_list = list(tweets.values())
+            tweets_df = spark.createDataFrame(tweets_list)
 
-            logger.info(f"users and tweets for {current_date} finished in {time()-begin_t}s")
-        except Exception as e:
-            logger.exception(f"Could not process the file in {current_date} due to: ", e)
+            output_users_file_path = os.path.join(output_path, 'users', f'date={current_date}', f'{batch_no}.parquet')
+            output_tweets_file_path = os.path.join(output_path, 'tweets', f'date={current_date}', f'{batch_no}.parquet')
+
+            tweets_df.write.parquet(output_tweets_file_path, mode='overwrite')
+            users_df.write.parquet(output_users_file_path, mode='overwrite')
+
+        logger.info(f"users and tweets for {current_date} finished in {time()-begin_t}s")
 
         current_dt = current_dt + timedelta(days=1)
 
