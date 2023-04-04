@@ -4,7 +4,7 @@ import emoji
 
 def distinct_emoji_list(string):
     """Resturns distinct list of emojis from the string"""
-    return {x['emoji'] for x in emoji.emoji_lis(string)}
+    return {x['emoji'] for x in emoji.emoji_list(string)}
 
 
 def clean_personal_marker(phrase):
@@ -50,7 +50,7 @@ def generate_split_profile_description(description):
 
     # get all emoji and remember them, then treat them as split characters
     emojis = distinct_emoji_list(d)
-    d = emoji.get_emoji_regexp().sub("|", d)  # .encode("ascii","namereplace").decode()
+    d = get_emoji_regexp().sub("|", d)  # .encode("ascii","namereplace").decode()
 
     # split on sensible split characters
     # | and
@@ -69,3 +69,9 @@ def generate_split_profile_description(description):
 def find_identifiers_simple(description):
     spl, emojis = generate_split_profile_description(description)
     return spl, emojis
+def get_emoji_regexp():
+    # Sort emoji by length to make sure multi-character emojis are
+    # matched first
+    emojis = sorted(emoji.EMOJI_DATA, key=len, reverse=True)
+    pattern = u'(' + u'|'.join(re.escape(u) for u in emojis) + u')'
+    return re.compile(pattern)
